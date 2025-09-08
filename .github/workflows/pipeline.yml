@@ -82,16 +82,3 @@ jobs:
           git commit -m "Deploy image tag ${{ github.sha }}"
           git push origin main
           
-- name: Checkout application repo
-  uses: actions/checkout@v3
-
-- name: Checkout GitOps repo
-  uses: actions/checkout@v3
-  with:
-    repository: Yashwanth0422/gitops-repo
-    path: gitops-repo
-    token: ${{ secrets.PAT_TOKEN }} 
-
-- name: Deploy to kind
-  run: |
-    kubectl apply -f gitops-repo/k8s/deployment.yaml
