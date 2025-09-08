@@ -26,7 +26,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          IMAGE=docker.io/${{ secrets.DOCKER_USERNAME }}/ubuntu:${{ github.sha }}
+          IMAGE=docker.io/${{ secrets.DOCKER_USERNAME }}/sample-webapp:${{ github.sha }}
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
           docker build -t $IMAGE .
           docker push $IMAGE
@@ -44,22 +44,18 @@ jobs:
         run: |
           python -m unittest discover -s tests
 
-    
       - name: Set up kind cluster
         uses: helm/kind-action@v1
-        if: always() 
         with:
           cluster_name: ci-smoke-test
 
       - name: Deploy to kind
-        if: always()
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl rollout status deployment/deployment1 --timeout=60s
           kubectl get pods -o wide
 
       - name: Run smoke tests
-        if: always()
         run: |
           curl -f http://localhost:8080/ || exit 1
 
@@ -72,8 +68,8 @@ jobs:
       - name: Checkout gitops repo
         uses: actions/checkout@v3
         with:
-          repository: https://github.com/Yashwanth0422/gitops-repo.git
-          token: ${{ secrets.PAT_TOKEN }} 
+          repository: Yashwanth0422/add-repo   # fixed (no https://)
+          token: ${{ secrets.PAT_TOKEN }}
           path: gitops-repo
 
       - name: Update deployment manifest
@@ -85,4 +81,3 @@ jobs:
           git add deployment.yaml
           git commit -m "Deploy image tag ${{ github.sha }}"
           git push origin main
-		 
