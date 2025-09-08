@@ -34,7 +34,7 @@ jobs:
 
       - name: Update gitops repo with new image tag
         env:
-          GITOPS_REPO: https://github.com/your-org/gitops-repo.git
+          GITOPS_REPO: https://github.com/Yashwanth0422/add-repo.git
           IMAGE_TAG: ${{ github.sha }}
         run: |
           git clone $GITOPS_REPO
