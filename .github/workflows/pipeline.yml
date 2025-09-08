@@ -49,8 +49,6 @@ jobs:
         with:
           cluster_name: ci-smoke-test
 
-      - name: Deploy to kind
-        run: |
       - name: Checkout gitops repo
         uses: actions/checkout@v3
         with:
@@ -58,7 +56,9 @@ jobs:
           token: ${{ secrets.PAT_TOKEN }}
           path: gitops-repo
 
-          kubectl apply -f /deployment.yaml
+      - name: Deploy to kind
+        run: |
+          kubectl apply -f gitops-repo/deployment.yaml
           kubectl rollout status deployment/deployment1 --timeout=60s
           kubectl get pods -o wide
 
@@ -75,7 +75,7 @@ jobs:
       - name: Checkout gitops repo
         uses: actions/checkout@v3
         with:
-          repository: Yashwanth0422/gitops-repo   # fixed (no https://)
+          repository: Yashwanth0422/gitops-repo
           token: ${{ secrets.PAT_TOKEN }}
           path: gitops-repo
 
@@ -88,4 +88,3 @@ jobs:
           git add deployment.yaml
           git commit -m "Deploy image tag ${{ github.sha }}"
           git push origin main
-          
