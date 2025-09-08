@@ -65,7 +65,7 @@ jobs:
           docker push ${{ env.IMAGE }}
 
       - name: Trigger GitOps Deployment workflow
-        uses: peter-evans/workflow-dispatch@v2.1.2
+        uses: peter-evans/workflow-dispatch@v2
         with:
           token: ${{ secrets.PAT_TOKEN }}       # PAT with repo access
           repository: Yashwanth0422/gitops-repo
