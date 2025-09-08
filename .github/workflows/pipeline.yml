@@ -59,7 +59,18 @@ jobs:
       - name: Deploy to kind
         run: |
           kubectl apply -f gitops-repo/deployment.yaml
-          kubectl rollout status deployment/sample-webapp --timeout=60s
+
+          # Wait for rollout; if it fails, print logs
+          if ! kubectl rollout status deployment/sample-webapp --timeout=180s; then
+            echo "Rollout failed! Printing pod info for debugging..."
+            kubectl get pods -o wide
+            POD_NAME=$(kubectl get pods -l app=sample-webapp -o jsonpath="{.items[0].metadata.name}")
+            kubectl describe pod $POD_NAME
+            kubectl logs $POD_NAME
+            exit 1
+          fi
+
+          # Confirm pods are running
           kubectl get pods -o wide
 
       - name: Run smoke tests
