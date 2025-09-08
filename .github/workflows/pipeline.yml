@@ -72,7 +72,7 @@ jobs:
       - name: Checkout gitops repo
         uses: actions/checkout@v3
         with:
-          repository: https://github.com/Yashwanth0422/add-repo.git
+          repository: https://github.com/Yashwanth0422/gitops-repo.git
           token: ${{ secrets.PAT_TOKEN }} 
           path: gitops-repo
 
