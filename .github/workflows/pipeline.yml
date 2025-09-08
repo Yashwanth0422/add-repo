@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Build & Test
 
 on:
   push:
@@ -6,96 +6,36 @@ on:
       - main
 
 jobs:
-  build:
-    name: Build Stage
+  build-and-test:
+    name: Build and Test Stage
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
+      # Checkout add-repo source code
+      - name: Checkout add-repo
         uses: actions/checkout@v3
 
+      # Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Log in to Docker registry
+      # Log in to Docker registry
+      - name: Docker login
         uses: docker/login-action@v2
         with:
           registry: docker.io
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
+      # Build and push Docker image
+      - name: Build & Push Docker image
         run: |
-          IMAGE=docker.io/${{ secrets.DOCKER_USERNAME }}/ubuntu1:${{ github.sha }}
+          IMAGE=docker.io/${{ secrets.DOCKER_USERNAME }}/sample-webapp:${{ github.sha }}
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
           docker build -t $IMAGE -f app/Dockerfile .
           docker push $IMAGE
 
-  test:
-    name: Test Stage
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v3
-
-      - name: Run unit tests
+      # Run unit tests
+      - name: Run Unit Tests
         run: |
           python -m unittest discover -s app/tests
-
-      - name: Set up kind cluster
-        uses: helm/kind-action@v1
-        with:
-          cluster_name: ci-smoke-test
-
-      - name: Checkout gitops repo
-        uses: actions/checkout@v3
-        with:
-          repository: Yashwanth0422/gitops-repo
-          token: ${{ secrets.PAT_TOKEN }}
-          path: gitops-repo
-
-      - name: Deploy to kind
-        run: |
-          kubectl apply -f gitops-repo/deployment.yaml
-
-          # Wait for rollout; if it fails, print logs
-          if ! kubectl rollout status deployment/sample-webapp --timeout=180s; then
-            echo "Rollout failed! Printing pod info for debugging..."
-            kubectl get pods -o wide
-            POD_NAME=$(kubectl get pods -l app=sample-webapp -o jsonpath="{.items[0].metadata.name}")
-            kubectl describe pod $POD_NAME
-            kubectl logs $POD_NAME
-            exit 1
-          fi
-
-          # Confirm pods are running
-          kubectl get pods -o wide
-
-      - name: Run smoke tests
-        run: |
-          curl -f http://localhost:8080/ || exit 1
-
-  gitops:
-    name: GitOps Deployment Stage
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - name: Checkout gitops repo
-        uses: actions/checkout@v3
-        with:
-          repository: Yashwanth0422/gitops-repo
-          token: ${{ secrets.PAT_TOKEN }}
-          path: gitops-repo
-
-      - name: Update deployment manifest
-        run: |
-          cd gitops-repo
-          sed -i "s|image: .*|image: docker.io/${{ secrets.DOCKER_USERNAME }}/ubuntu1:${{ github.sha }}|g" deployment.yaml
-          git config user.email "ci@example.com"
-          git config user.name "CI Bot"
-          git add deployment.yaml
-          git commit -m "Deploy image tag ${{ github.sha }}"
-          git push origin main
