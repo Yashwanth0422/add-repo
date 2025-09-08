@@ -59,7 +59,7 @@ jobs:
       - name: Deploy to kind
         run: |
           kubectl apply -f gitops-repo/deployment.yaml
-          kubectl rollout status deployment/deployment1 --timeout=60s
+          kubectl rollout status deployment/sample-webapp --timeout=60s
           kubectl get pods -o wide
 
       - name: Run smoke tests
