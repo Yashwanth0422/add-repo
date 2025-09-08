@@ -26,7 +26,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          IMAGE=docker.io/${{ secrets.DOCKER_USERNAME }}/sample-webapp:${{ github.sha }}
+          IMAGE=docker.io/${{ secrets.DOCKER_USERNAME }}/ubuntu:${{ github.sha }}
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
           docker build -t $IMAGE .
           docker push $IMAGE
@@ -55,7 +55,7 @@ jobs:
         if: always()
         run: |
           kubectl apply -f k8s/deployment.yaml
-          kubectl rollout status deployment/sample-webapp --timeout=60s
+          kubectl rollout status deployment/deployment1 --timeout=60s
           kubectl get pods -o wide
 
       - name: Run smoke tests
