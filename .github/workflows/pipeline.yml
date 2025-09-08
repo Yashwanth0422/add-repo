@@ -68,7 +68,7 @@ jobs:
       - name: Checkout gitops repo
         uses: actions/checkout@v3
         with:
-          repository: Yashwanth0422/add-repo   # fixed (no https://)
+          repository: Yashwanth0422/gitops-repo   # fixed (no https://)
           token: ${{ secrets.PAT_TOKEN }}
           path: gitops-repo
 
