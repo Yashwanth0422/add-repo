@@ -6,9 +6,6 @@ on:
       - main
 
 jobs:
-  # -------------------------
-  # 1️⃣ Build Stage
-  # -------------------------
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest
@@ -33,9 +30,6 @@ jobs:
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
           docker build -t $IMAGE -f app/Dockerfile .
 
-  # -------------------------
-  # 2️⃣ Test Stage
-  # -------------------------
   test:
     name: Run Unit Tests
     runs-on: ubuntu-latest
@@ -49,9 +43,7 @@ jobs:
         run: |
           python -m unittest discover -s app/tests || echo "No tests found"
 
-  # -------------------------
-  # 3️⃣ Push Stage
-  # -------------------------
+  
   push:
     name: Push Docker Image & Trigger GitOps
     runs-on: ubuntu-latest
