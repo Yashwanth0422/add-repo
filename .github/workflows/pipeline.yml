@@ -26,7 +26,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          IMAGE=docker.io/${{ secrets.DOCKER_USERNAME }}/sample-webapp:${{ github.sha }}
+          IMAGE=docker.io/${{ secrets.DOCKER_USERNAME }}/ubuntu1:${{ github.sha }}
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
           docker build -t $IMAGE .
           docker push $IMAGE
@@ -75,7 +75,7 @@ jobs:
       - name: Update deployment manifest
         run: |
           cd gitops-repo
-          sed -i "s|image: .*|image: docker.io/${{ secrets.DOCKER_USERNAME }}/sample-webapp:${{ github.sha }}|g" deployment.yaml
+          sed -i "s|image: .*|image: docker.io/${{ secrets.DOCKER_USERNAME }}/ubuntu1:${{ github.sha }}|g" deployment.yaml
           git config user.email "ci@example.com"
           git config user.name "CI Bot"
           git add deployment.yaml
