@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Build, Test & Trigger GitOps
 
 on:
   push:
@@ -6,33 +6,30 @@ on:
       - main
 
 jobs:
-  test:
-    name: Run Unit Tests
+  build-test-trigger:
+    name: Test, Build & Trigger GitOps Deployment
     runs-on: ubuntu-latest
+
     steps:
-      # Checkout add-repo code
+      # -------------------------------
+      # Stage 1: Checkout add-repo
+      # -------------------------------
       - name: Checkout add-repo
         uses: actions/checkout@v3
 
-      # Run unit tests
+      # -------------------------------
+      # Stage 2: Run unit tests
+      # -------------------------------
       - name: Run Unit Tests
         run: |
           python -m unittest discover -s app/tests
 
-  build:
-    name: Build and Push Docker Image
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      # Checkout add-repo code
-      - name: Checkout add-repo
-        uses: actions/checkout@v3
-
-      # Set up Docker Buildx
+      # -------------------------------
+      # Stage 3: Build & Push Docker Image
+      # -------------------------------
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # Docker login
       - name: Docker login
         uses: docker/login-action@v2
         with:
@@ -40,7 +37,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Build & push Docker image
       - name: Build & Push Docker image
         run: |
           IMAGE=docker.io/${{ secrets.DOCKER_USERNAME }}/sample-webapp:${{ github.sha }}
@@ -48,30 +44,22 @@ jobs:
           docker build -t $IMAGE -f app/Dockerfile .
           docker push $IMAGE
 
-  deploy-gitops:
-    name: Trigger GitOps Deployment
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      # Checkout add-repo (just to have workspace)
-      - name: Checkout add-repo
-        uses: actions/checkout@v3
-
-      # Setup SSH key for GitOps repo access
-      - name: Setup SSH
+      # -------------------------------
+      # Stage 4: Trigger GitOps Deployment using SSH deploy key
+      # -------------------------------
+      - name: Setup SSH key
         uses: webfactory/ssh-agent@v0.7.0
         with:
-          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+          ssh-private-key: ${{ secrets.GITOPS_DEPLOY_KEY }}
 
-      # Clone gitops-repo via SSH
-      - name: Clone GitOps repo
+      - name: Trigger GitOps Repo
         run: |
           git clone git@github.com:Yashwanth0422/gitops-repo.git
           cd gitops-repo
-          # Update deployment.yaml with new image
-          sed -i "s|image: .*|image: docker.io/${{ secrets.DOCKER_USERNAME }}/sample-webapp:${{ github.sha }}|g" deployment.yaml
+          # Update deployment.yaml with new image tag
+          sed -i "s|image: .*|image: docker.io/${{ secrets.DOCKER_USERNAME }}/sample-webapp:${GITHUB_SHA}|g" deployment.yaml
           git config user.email "ci@example.com"
           git config user.name "CI Bot"
           git add deployment.yaml
-          git commit -m "Deploy image tag ${{ github.sha }}" || echo "No changes to commit"
+          git commit -m "Deploy image tag ${GITHUB_SHA}" || echo "No changes to commit"
           git push origin main
