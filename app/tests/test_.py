@@ -1,8 +1,7 @@
-import unittest
+from app import app
 
-class SampleTest(unittest.TestCase):
-    def test_addition(self):
-        self.assertEqual(1 + 1, 2)
-
-if __name__ == "__main__":
-    unittest.main()
+def test_healthz():
+    with app.test_client() as c:
+        rv = c.get('/healthz')
+        assert rv.status_code == 200
+        assert rv.json['status'] == 'ok'
