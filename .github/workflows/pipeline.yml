@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Build & Test
 
 on:
   push:
@@ -6,25 +6,21 @@ on:
       - main
 
 jobs:
-  # ----------------- TEST STAGE -----------------
   test:
-    name: Run Unit Tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source
+      - name: Checkout add-repo
         uses: actions/checkout@v3
 
       - name: Run Unit Tests
         run: |
           python -m unittest discover -s app/tests
 
-  # ----------------- BUILD STAGE -----------------
   build:
-    name: Build & Push Docker Image
     runs-on: ubuntu-latest
-    needs: test  # only runs if test passes
+    needs: test
     steps:
-      - name: Checkout source
+      - name: Checkout add-repo
         uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
@@ -44,13 +40,11 @@ jobs:
           docker build -t $IMAGE -f app/Dockerfile .
           docker push $IMAGE
 
-  # ----------------- TRIGGER STAGE -----------------
   trigger:
-    name: Trigger GitOps Deployment
     runs-on: ubuntu-latest
-    needs: build  # only runs if build passes
+    needs: build
     steps:
-      - name: Trigger GitOps repo
+      - name: Trigger GitOps Deployment
         run: |
           curl -X POST \
             -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
