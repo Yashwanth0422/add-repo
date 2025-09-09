@@ -66,3 +66,4 @@ jobs:
         git add deployment.yaml
         git commit -m "Update image tag to $IMAGE_NAME:${GITHUB_SHA} [ci skip]"
         git push origin main
+        
