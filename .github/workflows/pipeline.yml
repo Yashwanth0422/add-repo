@@ -4,45 +4,39 @@ on:
   push:
     branches: [main]
 
+env:
+  IMAGE_NAME: yashwanth0422/sample-flask
+  GITOPS_REPO: https://github.com/Yashwanth0422/gitops-repo.git
+
 jobs:
   build-test-push-update-gitops:
     runs-on: ubuntu-latest
-    env:
-      IMAGE_NAME: yourdockerhubuser/sample-flask
-      GITOPS_REPO: https://github.com/yourorg/gitops-repo.git
+
     steps:
-      - uses: actions/checkout@v3
+    - name: Checkout source
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
 
-      - name: Install dependencies and run tests
-        run: |
-          pip install -r requirements.txt
-          pytest
+    - name: Install dependencies and run tests
+      run: |
+        pip install -r requirements.txt
+        pytest
 
-      - name: Log in to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Log in to DockerHub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}  # Set this secret to 'yashwanth0422'
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
-        run: |
-          docker build -t $IMAGE_NAME:${{ github.sha }} .
-          docker push $IMAGE_NAME:${{ github.sha }}
+    - name: Build and push Docker image
+      run: |
+        docker build -t $IMAGE_NAME:${{ github.sha }} .
+        docker push $IMAGE_NAME:${{ github.sha }}
 
-      - name: Clone and update gitops repo
-        env:
-          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
-        run: |
-          git clone https://x-access-token:${GH_TOKEN}@github.com/yourorg/gitops-repo.git
-          cd gitops-repo
-          sed -i "s|image: .*/sample-flask:.*|image: $IMAGE_NAME:${GITHUB_SHA}|g" deployment.yaml
-          git config user.email "ci-bot@yourorg.com"
-          git config user.name "CI Bot"
-          git add deployment.yaml
-          git commit -m "Update image tag to $IMAGE_NAME:${GITHUB_SHA} [ci skip]"
-          git push origin main
+    - name: Clone and update gitops repo
+      env:
+        GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}  # Token with push access to gitops
