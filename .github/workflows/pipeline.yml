@@ -39,7 +39,7 @@ jobs:
 
     - name: Clone and update gitops repo
       env:
-        GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}  # Token with push access to gitops repo
+        GH_TOKEN: ${{ secrets.PAT_TOKEN }}  # Token with push access to gitops repo
       run: |
         git clone https://x-access-token:${GH_TOKEN}@github.com/Yashwanth0422/gitops-repo.git
         cd gitops-repo
