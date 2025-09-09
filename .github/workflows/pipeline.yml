@@ -1,89 +1,48 @@
-name: CI/CD Pipeline
+name: CI Pipeline
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
-  # ------------------------
-  # Stage 1: Run Unit Tests
-  # ------------------------
-  test:
-    name: Run Unit Tests
+  build-test-push-update-gitops:
     runs-on: ubuntu-latest
-
+    env:
+      IMAGE_NAME: yourdockerhubuser/sample-flask
+      GITOPS_REPO: https://github.com/yourorg/gitops-repo.git
     steps:
-      - name: Checkout add-repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: 3.9
 
-      - name: Run Unit Tests
-        run: python -m unittest discover -s app/tests
+      - name: Install dependencies and run tests
+        run: |
+          pip install -r requirements.txt
+          pytest
 
-  # ------------------------
-  # Stage 2: Build & Push Docker Image
-  # ------------------------
-  build-and-push:
-    name: Build & Push Docker Image
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - name: Checkout add-repo
-        uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Docker login
+      - name: Log in to DockerHub
         uses: docker/login-action@v2
         with:
-          registry: docker.io
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build & Push Docker image
+      - name: Build and push Docker image
         run: |
-          IMAGE=docker.io/${{ secrets.DOCKER_USERNAME }}/sample-webapp:${{ github.sha }}
-          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
-          docker build -t $IMAGE -f app/Dockerfile .
-          docker push $IMAGE
+          docker build -t $IMAGE_NAME:${{ github.sha }} .
+          docker push $IMAGE_NAME:${{ github.sha }}
 
-  # ------------------------
-  # Stage 3: Trigger GitOps Deployment
-  # ------------------------
-  gitops-deploy:
-    name: GitOps Deployment
-    runs-on: ubuntu-latest
-    needs: build-and-push
-
-    steps:
-      # Checkout add-repo (for environment variables)
-      - name: Checkout add-repo
-        uses: actions/checkout@v3
-
-      # Setup SSH key to access gitops-repo
-      - name: Setup SSH key
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
-
-      # Clone gitops-repo
-      - name: Checkout gitops-repo
-        run: git clone git@github.com:Yashwanth0422/gitops-repo.git
-
-      # Update deployment.yaml with the new image tag
-      - name: Update Deployment Manifest
+      - name: Clone and update gitops repo
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
+          git clone https://x-access-token:${GH_TOKEN}@github.com/yourorg/gitops-repo.git
           cd gitops-repo
-          sed -i "s|image: .*|image: docker.io/${{ secrets.DOCKER_USERNAME }}/sample-webapp:${GITHUB_SHA}|g" deployment.yaml
-          git config user.email "ci@example.com"
+          sed -i "s|image: .*/sample-flask:.*|image: $IMAGE_NAME:${GITHUB_SHA}|g" deployment.yaml
+          git config user.email "ci-bot@yourorg.com"
           git config user.name "CI Bot"
           git add deployment.yaml
-          git commit -m "Deploy image tag ${GITHUB_SHA}" || echo "No changes to commit"
+          git commit -m "Update image tag to $IMAGE_NAME:${GITHUB_SHA} [ci skip]"
           git push origin main
